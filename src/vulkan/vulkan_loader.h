@@ -183,7 +183,9 @@ namespace dxvk::vk {
     VULKAN_FN(vkDestroyDevice);
     VULKAN_FN(vkGetDeviceQueue);
     VULKAN_FN(vkQueueSubmit);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkQueueSubmit2);
+    #endif
     VULKAN_FN(vkQueueWaitIdle);
     VULKAN_FN(vkDeviceWaitIdle);
     VULKAN_FN(vkAllocateMemory);
@@ -309,45 +311,75 @@ namespace dxvk::vk {
     VULKAN_FN(vkCmdDispatch);
     VULKAN_FN(vkCmdDispatchIndirect);
     VULKAN_FN(vkCmdCopyBuffer);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdCopyBuffer2);
+    #endif
     VULKAN_FN(vkCmdCopyImage);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdCopyImage2);
+    #endif
     VULKAN_FN(vkCmdBlitImage);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdBlitImage2);
+    #endif
     VULKAN_FN(vkCmdCopyBufferToImage);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdCopyBufferToImage2);
+    #endif
     VULKAN_FN(vkCmdCopyImageToBuffer);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdCopyImageToBuffer2);
+    #endif
     VULKAN_FN(vkCmdUpdateBuffer);
     VULKAN_FN(vkCmdFillBuffer);
     VULKAN_FN(vkCmdClearColorImage);
     VULKAN_FN(vkCmdClearDepthStencilImage);
     VULKAN_FN(vkCmdClearAttachments);
     VULKAN_FN(vkCmdResolveImage);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdResolveImage2);
+    #endif
     VULKAN_FN(vkCmdSetEvent);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdSetEvent2);
+    #endif
     VULKAN_FN(vkCmdResetEvent);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdResetEvent2);
+    #endif
     VULKAN_FN(vkCmdWaitEvents);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdWaitEvents2);
+    #endif
     VULKAN_FN(vkCmdPipelineBarrier);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdPipelineBarrier2);
+    #endif
     VULKAN_FN(vkCmdBeginQuery);
     VULKAN_FN(vkCmdEndQuery);
     VULKAN_FN(vkCmdResetQueryPool);
     VULKAN_FN(vkCmdWriteTimestamp);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdWriteTimestamp2);
+    #endif
     VULKAN_FN(vkCmdCopyQueryPoolResults);
     VULKAN_FN(vkCmdPushConstants);
     VULKAN_FN(vkCmdBeginRenderPass);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdBeginRenderPass2);
+    #endif
     VULKAN_FN(vkCmdNextSubpass);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdNextSubpass2);
+    #endif
     VULKAN_FN(vkCmdEndRenderPass);
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdEndRenderPass2);
+    #endif
+    #ifdef VK_VERSION_1_3
     VULKAN_FN(vkCmdBeginRendering);
     VULKAN_FN(vkCmdEndRendering);
+    #endif
     VULKAN_FN(vkCmdExecuteCommands);
 
     #ifdef VK_KHR_swapchain

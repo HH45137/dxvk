@@ -80,8 +80,55 @@ namespace dxvk {
 
     VkResult vr = VK_SUCCESS;
 
-    if (!this->isEmpty())
-      vr = vk->vkQueueSubmit2(queue, 1, &submitInfo, VK_NULL_HANDLE);
+    if (!this->isEmpty()) {
+      if (device->features().supportsVulkan13) {
+        vr = vk->vkQueueSubmit2(queue, 1, &submitInfo, VK_NULL_HANDLE);
+      } else {
+        // Fallback to traditional vkQueueSubmit for Vulkan 1.2
+        VkSubmitInfo legacySubmitInfo = { VK_STRUCTURE_TYPE_SUBMIT_INFO };
+        
+        // Convert semaphore waits
+        if (!m_semaphoreWaits.empty()) {
+          legacySubmitInfo.waitSemaphoreCount = m_semaphoreWaits.size();
+          std::vector<VkSemaphore> waitSemaphores(legacySubmitInfo.waitSemaphoreCount);
+          std::vector<VkPipelineStageFlags> waitStages(legacySubmitInfo.waitSemaphoreCount);
+          
+          for (size_t i = 0; i < m_semaphoreWaits.size(); i++) {
+            waitSemaphores[i] = m_semaphoreWaits[i].semaphore;
+            waitStages[i] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; // Conservative fallback
+          }
+          
+          legacySubmitInfo.pWaitSemaphores = waitSemaphores.data();
+          legacySubmitInfo.pWaitDstStageMask = waitStages.data();
+        }
+        
+        // Convert command buffers
+        if (!m_commandBuffers.empty()) {
+          legacySubmitInfo.commandBufferCount = m_commandBuffers.size();
+          std::vector<VkCommandBuffer> commandBuffers(legacySubmitInfo.commandBufferCount);
+          
+          for (size_t i = 0; i < m_commandBuffers.size(); i++) {
+            commandBuffers[i] = m_commandBuffers[i].commandBuffer;
+          }
+          
+          legacySubmitInfo.pCommandBuffers = commandBuffers.data();
+        }
+        
+        // Convert semaphore signals
+        if (!m_semaphoreSignals.empty()) {
+          legacySubmitInfo.signalSemaphoreCount = m_semaphoreSignals.size();
+          std::vector<VkSemaphore> signalSemaphores(legacySubmitInfo.signalSemaphoreCount);
+          
+          for (size_t i = 0; i < m_semaphoreSignals.size(); i++) {
+            signalSemaphores[i] = m_semaphoreSignals[i].semaphore;
+          }
+          
+          legacySubmitInfo.pSignalSemaphores = signalSemaphores.data();
+        }
+        
+        vr = vk->vkQueueSubmit(queue, 1, &legacySubmitInfo, VK_NULL_HANDLE);
+      }
+    }
 
     this->reset();
     return vr;

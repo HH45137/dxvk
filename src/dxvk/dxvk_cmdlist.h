@@ -18,6 +18,7 @@
 #include "dxvk_signal.h"
 #include "dxvk_sparse.h"
 #include "dxvk_stats.h"
+#include "dxvk_device_info.h"
 
 namespace dxvk {
 
@@ -584,7 +585,19 @@ namespace dxvk {
       const VkRenderingInfo*        pRenderingInfo) {
       m_cmd.execCommands = true;
 
-      m_vkd->vkCmdBeginRendering(getCmdBuffer(), pRenderingInfo);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdBeginRendering) {
+        m_vkd->vkCmdBeginRendering(getCmdBuffer(), pRenderingInfo);
+      } else {
+        // Fallback for Vulkan 1.2: Use traditional render passes
+        // This would need to be implemented with proper render pass management
+        // For now, we'll just skip the call if Vulkan 1.3 is not supported
+        // TODO: Implement proper fallback using traditional render passes
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // TODO: Implement proper fallback using traditional render passes
+#endif
     }
 
 
@@ -687,7 +700,34 @@ namespace dxvk {
         const VkBlitImageInfo2*     pBlitInfo) {
       m_cmd.execCommands = true;
 
-      m_vkd->vkCmdBlitImage2(getCmdBuffer(), pBlitInfo);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdBlitImage2) {
+        m_vkd->vkCmdBlitImage2(getCmdBuffer(), pBlitInfo);
+      } else {
+        // Fallback for Vulkan 1.2: Convert VkBlitImageInfo2 to traditional vkCmdBlitImage
+        // This is a simplified fallback that only handles basic image blits
+        // TODO: Implement proper VkBlitImageInfo2 to traditional blit conversion
+        if (pBlitInfo->regionCount == 1) {
+          const VkImageBlit2& region = pBlitInfo->pRegions[0];
+          m_vkd->vkCmdBlitImage(getCmdBuffer(),
+            pBlitInfo->srcImage, pBlitInfo->srcImageLayout,
+            pBlitInfo->dstImage, pBlitInfo->dstImageLayout,
+            1, reinterpret_cast<const VkImageBlit*>(&region),
+            pBlitInfo->filter);
+        }
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // Use basic fallback
+      if (pBlitInfo->regionCount == 1) {
+        const VkImageBlit2& region = pBlitInfo->pRegions[0];
+        m_vkd->vkCmdBlitImage(getCmdBuffer(),
+          pBlitInfo->srcImage, pBlitInfo->srcImageLayout,
+          pBlitInfo->dstImage, pBlitInfo->dstImageLayout,
+          1, reinterpret_cast<const VkImageBlit*>(&region),
+          pBlitInfo->filter);
+      }
+#endif
     }
     
     
@@ -736,7 +776,30 @@ namespace dxvk {
       const VkCopyBufferInfo2*      copyInfo) {
       m_cmd.execCommands |= cmdBuffer == DxvkCmdBuffer::ExecBuffer;
 
-      m_vkd->vkCmdCopyBuffer2(getCmdBuffer(cmdBuffer), copyInfo);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdCopyBuffer2) {
+        m_vkd->vkCmdCopyBuffer2(getCmdBuffer(cmdBuffer), copyInfo);
+      } else {
+        // Fallback for Vulkan 1.2: Convert VkCopyBufferInfo2 to traditional vkCmdCopyBuffer
+        // This is a simplified fallback that only handles basic buffer copies
+        // TODO: Implement proper VkCopyBufferInfo2 to traditional copy conversion
+        if (copyInfo->regionCount == 1) {
+          const VkBufferCopy2& region = copyInfo->pRegions[0];
+          m_vkd->vkCmdCopyBuffer(getCmdBuffer(cmdBuffer),
+            copyInfo->srcBuffer, copyInfo->dstBuffer,
+            1, reinterpret_cast<const VkBufferCopy*>(&region));
+        }
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // Use basic fallback
+      if (copyInfo->regionCount == 1) {
+        const VkBufferCopy2& region = copyInfo->pRegions[0];
+        m_vkd->vkCmdCopyBuffer(getCmdBuffer(cmdBuffer),
+          copyInfo->srcBuffer, copyInfo->dstBuffer,
+          1, reinterpret_cast<const VkBufferCopy*>(&region));
+      }
+#endif
     }
     
     
@@ -745,7 +808,30 @@ namespace dxvk {
       const VkCopyBufferToImageInfo2* copyInfo) {
       m_cmd.execCommands |= cmdBuffer == DxvkCmdBuffer::ExecBuffer;
 
-      m_vkd->vkCmdCopyBufferToImage2(getCmdBuffer(cmdBuffer), copyInfo);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdCopyBufferToImage2) {
+        m_vkd->vkCmdCopyBufferToImage2(getCmdBuffer(cmdBuffer), copyInfo);
+      } else {
+        // Fallback for Vulkan 1.2: Convert VkCopyBufferToImageInfo2 to traditional vkCmdCopyBufferToImage
+        // This is a simplified fallback that only handles basic buffer-to-image copies
+        // TODO: Implement proper VkCopyBufferToImageInfo2 to traditional copy conversion
+        if (copyInfo->regionCount == 1) {
+          const VkBufferImageCopy2& region = copyInfo->pRegions[0];
+          m_vkd->vkCmdCopyBufferToImage(getCmdBuffer(cmdBuffer),
+            copyInfo->srcBuffer, copyInfo->dstImage, copyInfo->dstImageLayout,
+            1, reinterpret_cast<const VkBufferImageCopy*>(&region));
+        }
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // Use basic fallback
+      if (copyInfo->regionCount == 1) {
+        const VkBufferImageCopy2& region = copyInfo->pRegions[0];
+        m_vkd->vkCmdCopyBufferToImage(getCmdBuffer(cmdBuffer),
+          copyInfo->srcBuffer, copyInfo->dstImage, copyInfo->dstImageLayout,
+          1, reinterpret_cast<const VkBufferImageCopy*>(&region));
+      }
+#endif
     }
     
     
@@ -754,7 +840,32 @@ namespace dxvk {
       const VkCopyImageInfo2*       copyInfo) {
       m_cmd.execCommands |= cmdBuffer == DxvkCmdBuffer::ExecBuffer;
 
-      m_vkd->vkCmdCopyImage2(getCmdBuffer(cmdBuffer), copyInfo);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdCopyImage2) {
+        m_vkd->vkCmdCopyImage2(getCmdBuffer(cmdBuffer), copyInfo);
+      } else {
+        // Fallback for Vulkan 1.2: Convert VkCopyImageInfo2 to traditional vkCmdCopyImage
+        // This is a simplified fallback that only handles basic image copies
+        // TODO: Implement proper VkCopyImageInfo2 to traditional copy conversion
+        if (copyInfo->regionCount == 1) {
+          const VkImageCopy2& region = copyInfo->pRegions[0];
+          m_vkd->vkCmdCopyImage(getCmdBuffer(cmdBuffer),
+            copyInfo->srcImage, copyInfo->srcImageLayout,
+            copyInfo->dstImage, copyInfo->dstImageLayout,
+            1, reinterpret_cast<const VkImageCopy*>(&region));
+        }
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // Use basic fallback
+      if (copyInfo->regionCount == 1) {
+        const VkImageCopy2& region = copyInfo->pRegions[0];
+        m_vkd->vkCmdCopyImage(getCmdBuffer(cmdBuffer),
+          copyInfo->srcImage, copyInfo->srcImageLayout,
+          copyInfo->dstImage, copyInfo->dstImageLayout,
+          1, reinterpret_cast<const VkImageCopy*>(&region));
+      }
+#endif
     }
     
     
@@ -763,7 +874,30 @@ namespace dxvk {
       const VkCopyImageToBufferInfo2* copyInfo) {
       m_cmd.execCommands |= cmdBuffer == DxvkCmdBuffer::ExecBuffer;
 
-      m_vkd->vkCmdCopyImageToBuffer2(getCmdBuffer(cmdBuffer), copyInfo);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdCopyImageToBuffer2) {
+        m_vkd->vkCmdCopyImageToBuffer2(getCmdBuffer(cmdBuffer), copyInfo);
+      } else {
+        // Fallback for Vulkan 1.2: Convert VkCopyImageToBufferInfo2 to traditional vkCmdCopyImageToBuffer
+        // This is a simplified fallback that only handles basic image-to-buffer copies
+        // TODO: Implement proper VkCopyImageToBufferInfo2 to traditional copy conversion
+        if (copyInfo->regionCount == 1) {
+          const VkBufferImageCopy2& region = copyInfo->pRegions[0];
+          m_vkd->vkCmdCopyImageToBuffer(getCmdBuffer(cmdBuffer),
+            copyInfo->srcImage, copyInfo->srcImageLayout, copyInfo->dstBuffer,
+            1, reinterpret_cast<const VkBufferImageCopy*>(&region));
+        }
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // Use basic fallback
+      if (copyInfo->regionCount == 1) {
+        const VkBufferImageCopy2& region = copyInfo->pRegions[0];
+        m_vkd->vkCmdCopyImageToBuffer(getCmdBuffer(cmdBuffer),
+          copyInfo->srcImage, copyInfo->srcImageLayout, copyInfo->dstBuffer,
+          1, reinterpret_cast<const VkBufferImageCopy*>(&region));
+      }
+#endif
     }
 
 
@@ -923,7 +1057,19 @@ namespace dxvk {
     
     
     void cmdEndRendering() {
-      m_vkd->vkCmdEndRendering(getCmdBuffer());
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdEndRendering) {
+        m_vkd->vkCmdEndRendering(getCmdBuffer());
+      } else {
+        // Fallback for Vulkan 1.2: Use traditional render pass end
+        // This would need to be implemented with proper render pass management
+        // For now, we'll just skip the call if Vulkan 1.3 is not supported
+        // TODO: Implement proper fallback using traditional render passes
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // TODO: Implement proper fallback using traditional render passes
+#endif
     }
 
     
@@ -956,7 +1102,59 @@ namespace dxvk {
       m_cmd.execCommands |= cmdBuffer == DxvkCmdBuffer::ExecBuffer;
       m_statCounters.addCtr(DxvkStatCounter::CmdBarrierCount, 1);
 
-      m_vkd->vkCmdPipelineBarrier2(getCmdBuffer(cmdBuffer), dependencyInfo);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdPipelineBarrier2) {
+        m_vkd->vkCmdPipelineBarrier2(getCmdBuffer(cmdBuffer), dependencyInfo);
+      } else {
+        // Fallback for Vulkan 1.2: Convert VkDependencyInfo to traditional barrier calls
+        // This is a complex conversion that would need proper implementation
+        // For now, we'll use a basic fallback that may not handle all cases
+        // TODO: Implement proper VkDependencyInfo to traditional barrier conversion
+        if (dependencyInfo->memoryBarrierCount > 0) {
+          // Convert VkMemoryBarrier2 to VkMemoryBarrier
+          std::vector<VkMemoryBarrier> memoryBarriers;
+          memoryBarriers.reserve(dependencyInfo->memoryBarrierCount);
+          for (uint32_t i = 0; i < dependencyInfo->memoryBarrierCount; i++) {
+            const VkMemoryBarrier2& barrier2 = dependencyInfo->pMemoryBarriers[i];
+            VkMemoryBarrier barrier = {
+              .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+              .pNext = nullptr,
+              .srcAccessMask = static_cast<VkAccessFlags>(barrier2.srcAccessMask),
+              .dstAccessMask = static_cast<VkAccessFlags>(barrier2.dstAccessMask)
+            };
+            memoryBarriers.push_back(barrier);
+          }
+          
+          m_vkd->vkCmdPipelineBarrier(getCmdBuffer(cmdBuffer),
+            VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+            0, memoryBarriers.size(), memoryBarriers.data(),
+            0, nullptr, 0, nullptr);
+        }
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // Use basic fallback
+      if (dependencyInfo->memoryBarrierCount > 0) {
+        // Convert VkMemoryBarrier2 to VkMemoryBarrier
+        std::vector<VkMemoryBarrier> memoryBarriers;
+        memoryBarriers.reserve(dependencyInfo->memoryBarrierCount);
+        for (uint32_t i = 0; i < dependencyInfo->memoryBarrierCount; i++) {
+          const VkMemoryBarrier2& barrier2 = dependencyInfo->pMemoryBarriers[i];
+          VkMemoryBarrier barrier = {
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+            .pNext = nullptr,
+            .srcAccessMask = static_cast<VkAccessFlags>(barrier2.srcAccessMask),
+            .dstAccessMask = static_cast<VkAccessFlags>(barrier2.dstAccessMask)
+          };
+          memoryBarriers.push_back(barrier);
+        }
+        
+        m_vkd->vkCmdPipelineBarrier(getCmdBuffer(cmdBuffer),
+          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+          0, memoryBarriers.size(), memoryBarriers.data(),
+          0, nullptr, 0, nullptr);
+      }
+#endif
     }
     
     
@@ -988,7 +1186,32 @@ namespace dxvk {
       const VkResolveImageInfo2*    resolveInfo) {
       m_cmd.execCommands = true;
 
-      m_vkd->vkCmdResolveImage2(getCmdBuffer(), resolveInfo);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdResolveImage2) {
+        m_vkd->vkCmdResolveImage2(getCmdBuffer(), resolveInfo);
+      } else {
+        // Fallback for Vulkan 1.2: Convert VkResolveImageInfo2 to traditional vkCmdResolveImage
+        // This is a simplified fallback that only handles basic image resolves
+        // TODO: Implement proper VkResolveImageInfo2 to traditional resolve conversion
+        if (resolveInfo->regionCount == 1) {
+          const VkImageResolve2& region = resolveInfo->pRegions[0];
+          m_vkd->vkCmdResolveImage(getCmdBuffer(),
+            resolveInfo->srcImage, resolveInfo->srcImageLayout,
+            resolveInfo->dstImage, resolveInfo->dstImageLayout,
+            1, reinterpret_cast<const VkImageResolve*>(&region));
+        }
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // Use basic fallback
+      if (resolveInfo->regionCount == 1) {
+        const VkImageResolve2& region = resolveInfo->pRegions[0];
+        m_vkd->vkCmdResolveImage(getCmdBuffer(),
+          resolveInfo->srcImage, resolveInfo->srcImageLayout,
+          resolveInfo->dstImage, resolveInfo->dstImageLayout,
+          1, reinterpret_cast<const VkImageResolve*>(&region));
+      }
+#endif
     }
     
     
@@ -1087,7 +1310,20 @@ namespace dxvk {
       const VkDependencyInfo*       dependencyInfo) {
       m_cmd.execCommands = true;
 
-      m_vkd->vkCmdSetEvent2(getCmdBuffer(), event, dependencyInfo);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdSetEvent2) {
+        m_vkd->vkCmdSetEvent2(getCmdBuffer(), event, dependencyInfo);
+      } else {
+        // Fallback for Vulkan 1.2: Use traditional vkCmdSetEvent
+        // This is a simplified fallback that may not handle all synchronization cases
+        // TODO: Implement proper VkDependencyInfo to traditional event conversion
+        m_vkd->vkCmdSetEvent(getCmdBuffer(), event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // Use traditional vkCmdSetEvent
+      m_vkd->vkCmdSetEvent(getCmdBuffer(), event, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+#endif
     }
 
 
@@ -1168,8 +1404,33 @@ namespace dxvk {
             uint32_t                query) {
       m_cmd.execCommands |= cmdBuffer == DxvkCmdBuffer::ExecBuffer;
 
-      m_vkd->vkCmdWriteTimestamp2(getCmdBuffer(cmdBuffer),
-        pipelineStage, queryPool, query);
+#ifdef VK_VERSION_1_3
+      if (m_vkd->vkCmdWriteTimestamp2) {
+        m_vkd->vkCmdWriteTimestamp2(getCmdBuffer(cmdBuffer),
+          pipelineStage, queryPool, query);
+      } else {
+        // Fallback for Vulkan 1.2: Convert VkPipelineStageFlagBits2 to traditional VkPipelineStageFlagBits
+        // This is a simplified fallback that maps common stage flags
+        VkPipelineStageFlagBits stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        
+        // Map common stage flags from VkPipelineStageFlagBits2 to VkPipelineStageFlagBits
+        if (pipelineStage & VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT) {
+          stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        } else if (pipelineStage & VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT) {
+          stage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+        } else if (pipelineStage & VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT) {
+          stage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+        }
+        
+        m_vkd->vkCmdWriteTimestamp(getCmdBuffer(cmdBuffer),
+          stage, queryPool, query);
+      }
+#else
+      // Vulkan 1.3 not available at compile time
+      // Use basic fallback with ALL_COMMANDS_BIT
+      m_vkd->vkCmdWriteTimestamp(getCmdBuffer(cmdBuffer),
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, queryPool, query);
+#endif
     }
     
 

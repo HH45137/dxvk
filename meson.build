@@ -188,7 +188,7 @@ def_spec_ext = '.def'
 glsl_compiler = find_program('glslang', 'glslangValidator')
 glsl_args = [
   '--quiet',
-  '--target-env', 'vulkan1.3',
+  '--target-env', 'vulkan1.2',
   '--vn', '@BASENAME@',
   '--depfile', '@DEPFILE@',
   '@INPUT@',

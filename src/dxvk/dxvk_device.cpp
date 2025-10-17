@@ -75,16 +75,32 @@ namespace dxvk {
       info.pNext = &formatList;
     }
 
-    VkImageSubresource2KHR subresourceInfo = { VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_KHR };
-    subresourceInfo.imageSubresource = subresource;
+    if (m_features.supportsVulkan13) {
+      VkImageSubresource2KHR subresourceInfo = { VK_STRUCTURE_TYPE_IMAGE_SUBRESOURCE_2_KHR };
+      subresourceInfo.imageSubresource = subresource;
 
-    VkDeviceImageSubresourceInfoKHR query = { VK_STRUCTURE_TYPE_DEVICE_IMAGE_SUBRESOURCE_INFO_KHR };
-    query.pCreateInfo = &info;
-    query.pSubresource = &subresourceInfo;
+      VkDeviceImageSubresourceInfoKHR query = { VK_STRUCTURE_TYPE_DEVICE_IMAGE_SUBRESOURCE_INFO_KHR };
+      query.pCreateInfo = &info;
+      query.pSubresource = &subresourceInfo;
 
-    VkSubresourceLayout2KHR layout = { VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_KHR };
-    m_vkd->vkGetDeviceImageSubresourceLayoutKHR(m_vkd->device(), &query, &layout);
-    return layout.subresourceLayout;
+      VkSubresourceLayout2KHR layout = { VK_STRUCTURE_TYPE_SUBRESOURCE_LAYOUT_2_KHR };
+      m_vkd->vkGetDeviceImageSubresourceLayoutKHR(m_vkd->device(), &query, &layout);
+      return layout.subresourceLayout;
+    } else {
+      // Fallback implementation for Vulkan 1.2
+      VkImage image = VK_NULL_HANDLE;
+      VkResult vr = m_vkd->vkCreateImage(m_vkd->device(), &info, nullptr, &image);
+      
+      if (vr != VK_SUCCESS) {
+        throw DxvkError(str::format("Failed to create temporary image for subresource layout query: ", vr));
+      }
+      
+      VkSubresourceLayout layout = {};
+      m_vkd->vkGetImageSubresourceLayout(m_vkd->device(), image, &subresource, &layout);
+      m_vkd->vkDestroyImage(m_vkd->device(), image, nullptr);
+      
+      return layout;
+    }
   }
 
 

@@ -26,6 +26,7 @@ namespace dxvk {
     VkPhysicalDeviceVulkan11Properties                        vk11                            = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_PROPERTIES };
     VkPhysicalDeviceVulkan12Properties                        vk12                            = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES };
     VkPhysicalDeviceVulkan13Properties                        vk13                            = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_PROPERTIES };
+    bool                                                      supportsVulkan13                = false;
     VkPhysicalDeviceConservativeRasterizationPropertiesEXT    extConservativeRasterization    = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CONSERVATIVE_RASTERIZATION_PROPERTIES_EXT };
     VkPhysicalDeviceCustomBorderColorPropertiesEXT            extCustomBorderColor            = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_PROPERTIES_EXT };
     VkPhysicalDeviceDescriptorBufferPropertiesEXT             extDescriptorBuffer             = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_BUFFER_PROPERTIES_EXT };
@@ -54,6 +55,7 @@ namespace dxvk {
     VkPhysicalDeviceVulkan11Features                          vk11                            = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES };
     VkPhysicalDeviceVulkan12Features                          vk12                            = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES };;
     VkPhysicalDeviceVulkan13Features                          vk13                            = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES };;
+    bool                                                      supportsVulkan13                = false;
     VkPhysicalDeviceAttachmentFeedbackLoopLayoutFeaturesEXT   extAttachmentFeedbackLoopLayout = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ATTACHMENT_FEEDBACK_LOOP_LAYOUT_FEATURES_EXT };
     VkBool32                                                  extConservativeRasterization    = VK_FALSE;
     VkPhysicalDeviceCustomBorderColorFeaturesEXT              extCustomBorderColor            = { VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_CUSTOM_BORDER_COLOR_FEATURES_EXT };
