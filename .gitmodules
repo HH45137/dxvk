@@ -14,3 +14,7 @@
 [submodule "subprojects/dxbc-spirv"]
 	path = subprojects/dxbc-spirv
 	url = https://github.com/doitsujin/dxbc-spirv.git
+[submodule "src/dxvk/imgui"]
+	path = src/dxvk/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = master
