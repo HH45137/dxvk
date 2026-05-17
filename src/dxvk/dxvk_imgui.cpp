@@ -1,4 +1,5 @@
 #include "dxvk_imgui.h"
+#include "../util/log/log.h"
 
 namespace dxvk {
     ImGuiIO *DxvkImgui::io = nullptr;
@@ -11,8 +12,11 @@ namespace dxvk {
         (void *) io;
         io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
         io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+
+        Logger::info("Initialized ImGui");
     }
 
     void DxvkImgui::destroy() {
+        Logger::info("Destroyed ImGui");
     }
 }

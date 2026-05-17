@@ -42,6 +42,8 @@ namespace dxvk {
       m_shaderCache = DxvkShaderCache::getInstance();
 
     logBindingModel();
+
+    setImgui();
   }
   
   
@@ -66,6 +68,8 @@ namespace dxvk {
     // Stop workers explicitly in order to prevent
     // access to structures that are being destroyed.
     m_objects.pipelineManager().stopWorkerThreads();
+
+    destroyImgui();
   }
 
 
