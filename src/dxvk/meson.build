@@ -96,6 +96,34 @@ if platform == 'windows'
   ]
 endif
 
+imgui_src = [
+  './imgui/imstb_textedit.h',
+  './imgui/imstb_truetype.h',
+  './imgui/imgui.cpp',
+  './imgui/imgui_demo.cpp',
+  './imgui/imgui_draw.cpp',
+  './imgui/imgui_tables.cpp',
+  './imgui/imgui_widgets.cpp',
+  './imgui/imconfig.h',
+  './imgui/imgui.h',
+  './imgui/imgui_internal.h',
+  './imgui/imstb_rectpack.h',
+  './imgui/backends/imgui_impl_vulkan.h',
+  './imgui/backends/imgui_impl_win32.cpp',
+  './imgui/backends/imgui_impl_win32.h',
+  './imgui/backends/imgui_impl_vulkan.cpp',
+
+  './dxvk_imgui.h',
+  './dxvk_imgui.cpp',
+]
+dxvk_src += imgui_src
+imgui_include_dirs = [
+  './',
+  './imgui',
+  './imgui/backends',
+]
+imgui_include_path = include_directories(imgui_include_dirs)
+
 dxvk_extra_deps = [ dependency('threads') ]
 if platform == 'linux'
   dxvk_extra_deps += [ cpp.find_library('dl', required: false) ]
@@ -104,7 +132,7 @@ endif
 dxvk_lib = static_library('dxvk', dxvk_src, glsl_generator.process(dxvk_shaders), dxvk_version,
   link_with           : [ util_lib, spirv_lib, wsi_lib ],
   dependencies        : [ dxbc_spirv_dep, vkcommon_dep ] + dxvk_extra_deps,
-  include_directories : [ dxvk_include_path ],
+  include_directories : [ dxvk_include_path ] + imgui_include_path,
 )
 
 dxvk_dep = declare_dependency(

@@ -733,7 +733,11 @@ namespace dxvk {
      * used by the GPU can be safely destroyed.
      */
     void waitForIdle();
-    
+
+    void setImgui();
+
+    void destroyImgui();
+
   private:
     
     DxvkOptions                 m_options;

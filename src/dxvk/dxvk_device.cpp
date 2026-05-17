@@ -4,6 +4,7 @@
 #include "dxvk_latency_reflex.h"
 #include "dxvk_shader_cache.h"
 #include "dxvk_shader_ir.h"
+#include "dxvk_imgui.h"
 
 namespace dxvk {
   
@@ -704,8 +705,15 @@ namespace dxvk {
 
     m_submissionQueue.unlockDeviceQueue();
   }
-  
-  
+
+  void DxvkDevice::setImgui() {
+    DxvkImgui::init();
+  }
+
+  void DxvkDevice::destroyImgui() {
+    DxvkImgui::destroy();
+  }
+
   DxvkDevicePerfHints DxvkDevice::getPerfHints() {
     DxvkDevicePerfHints hints;
 
