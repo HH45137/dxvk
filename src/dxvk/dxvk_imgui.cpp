@@ -16,7 +16,7 @@ namespace dxvk {
     bool DxvkImgui::m_initialized = false;
     bool DxvkImgui::m_useDynamicRendering = false;
     ImGuiIO *DxvkImgui::m_io = nullptr;
-    VkDescriptorPool DxvkImgui::m_descriptorPool = nullptr;
+    VkDescriptorPool DxvkImgui::m_descriptorPool = VK_NULL_HANDLE;
     HWND DxvkImgui::m_hwnd = nullptr;
 
     void DxvkImgui::init(const Rc<DxvkDevice> &device, HWND hwnd) {
