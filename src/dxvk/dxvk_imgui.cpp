@@ -2,6 +2,9 @@
 
 #include "../util/log/log.h"
 
+#include "imgui_impl_win32.h"
+#include "imgui_impl_vulkan.h"
+
 namespace dxvk {
     static void checkVkResult(VkResult err) {
         if (err == VK_SUCCESS)
@@ -15,7 +18,13 @@ namespace dxvk {
     VkDescriptorPool DxvkImgui::m_descriptorPool = nullptr;
     HWND DxvkImgui::m_hwnd = nullptr;
 
-    void DxvkImgui::init(const Rc<DxvkDevice> &device) {
+    void DxvkImgui::init(const Rc<DxvkDevice> &device, HWND hwnd) {
+        if (m_hwnd == nullptr) {
+            Logger::err("Please set the hwnd first!");
+            return;
+        }
+        m_hwnd = hwnd;
+
         ImGui_ImplVulkan_LoadFunctions(
             DxvkVulkanApiVersion,
             [](const char *function_name, void *) -> PFN_vkVoidFunction {
@@ -63,10 +72,6 @@ namespace dxvk {
             auto queues = device->queues();
 
             // The win32 backend
-            if (m_hwnd == nullptr) {
-                Logger::err("Please set the hwnd first!");
-                return;
-            }
             ImGui_ImplWin32_Init(m_hwnd);
 
             // The vulkan backend

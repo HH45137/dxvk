@@ -42,8 +42,6 @@ namespace dxvk {
       m_shaderCache = DxvkShaderCache::getInstance();
 
     logBindingModel();
-
-    setImgui();
   }
   
   
@@ -710,8 +708,8 @@ namespace dxvk {
     m_submissionQueue.unlockDeviceQueue();
   }
 
-  void DxvkDevice::setImgui() {
-    DxvkImgui::init(this);
+  void DxvkDevice::setImgui(const Rc<DxvkDevice> &device, HWND hwnd) {
+    DxvkImgui::init(device, hwnd);
   }
 
   void DxvkDevice::destroyImgui() {

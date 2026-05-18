@@ -3,15 +3,11 @@
 #include "dxvk_device.h"
 
 #include "imgui.h"
-#include "imgui_impl_win32.h"
-#define VK_USE_PLATFORM_WIN32_KHR
-#include "dxvk_device.h"
-#include "imgui_impl_vulkan.h"
 
 namespace dxvk {
     class DxvkImgui {
     public:
-        static void init(const Rc<DxvkDevice> &device);
+        static void init(const Rc<DxvkDevice> &device, HWND hwnd);
 
         static void onSwapChainCreate(
             VkFormat format,
@@ -32,10 +28,10 @@ namespace dxvk {
 
         static void destroy();
 
-        static HWND m_hwnd;
         static bool m_initialized;
 
     private:
+        static HWND m_hwnd;
         static bool m_useDynamicRendering;
         static ImGuiIO *m_io;
         static VkDescriptorPool m_descriptorPool;
