@@ -711,7 +711,7 @@ namespace dxvk {
   }
 
   void DxvkDevice::setImgui() {
-    DxvkImgui::init();
+    DxvkImgui::init(this);
   }
 
   void DxvkDevice::destroyImgui() {

@@ -111,7 +111,7 @@ imgui_src = [
   './imgui/backends/imgui_impl_vulkan.h',
   './imgui/backends/imgui_impl_win32.cpp',
   './imgui/backends/imgui_impl_win32.h',
-  './imgui/backends/imgui_impl_vulkan.cpp',
+#  './imgui/backends/imgui_impl_vulkan.cpp',
 
   './dxvk_imgui.h',
   './dxvk_imgui.cpp',
@@ -124,13 +124,20 @@ imgui_include_dirs = [
 ]
 imgui_include_path = include_directories(imgui_include_dirs)
 
+imgui_vulkan_src = files(['./imgui/backends/imgui_impl_vulkan.cpp'])
+imgui_vulkan_lib = static_library(
+  'imgui_vulkan', imgui_vulkan_src,
+  cpp_args: ['-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES'],
+  include_directories: [ dxvk_include_path ] + imgui_include_path,
+)
+
 dxvk_extra_deps = [ dependency('threads') ]
 if platform == 'linux'
   dxvk_extra_deps += [ cpp.find_library('dl', required: false) ]
 endif
 
 dxvk_lib = static_library('dxvk', dxvk_src, glsl_generator.process(dxvk_shaders), dxvk_version,
-  link_with           : [ util_lib, spirv_lib, wsi_lib ],
+  link_with           : [ util_lib, spirv_lib, wsi_lib, imgui_vulkan_lib ],
   dependencies        : [ dxbc_spirv_dep, vkcommon_dep ] + dxvk_extra_deps,
   include_directories : [ dxvk_include_path ] + imgui_include_path,
 )
