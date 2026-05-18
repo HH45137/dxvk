@@ -144,5 +144,5 @@ dxvk_lib = static_library('dxvk', dxvk_src, glsl_generator.process(dxvk_shaders)
 
 dxvk_dep = declare_dependency(
   link_with           : [ dxvk_lib ],
-  include_directories : [ dxvk_include_path ],
+  include_directories : [ dxvk_include_path] + imgui_include_path,
 )
