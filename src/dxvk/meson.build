@@ -127,7 +127,7 @@ imgui_include_path = include_directories(imgui_include_dirs)
 imgui_vulkan_src = files(['./imgui/backends/imgui_impl_vulkan.cpp'])
 imgui_vulkan_lib = static_library(
   'imgui_vulkan', imgui_vulkan_src,
-  cpp_args: ['-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES'],
+  cpp_args: ['-DIMGUI_IMPL_VULKAN_NO_PROTOTYPES', '-DIMGUI_IMPL_VULKAN_USE_LOADER'],
   include_directories: [ dxvk_include_path ] + imgui_include_path,
 )
 

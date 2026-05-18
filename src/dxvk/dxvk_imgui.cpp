@@ -1,6 +1,7 @@
 #include "dxvk_imgui.h"
 
 #include "../util/log/log.h"
+#include "../vulkan/vulkan_loader.h"
 
 #include "imgui_impl_win32.h"
 #include "imgui_impl_vulkan.h"
@@ -9,7 +10,7 @@ namespace dxvk {
     static void checkVkResult(VkResult err) {
         if (err == VK_SUCCESS)
             return;
-        Logger::info("[vulkan] Error: VkResult =" + std::to_string(err));
+        Logger::info("[imgui] [vulkan] Error: VkResult =" + std::to_string(err));
     }
 
     bool DxvkImgui::m_initialized = false;
@@ -19,20 +20,25 @@ namespace dxvk {
     HWND DxvkImgui::m_hwnd = nullptr;
 
     void DxvkImgui::init(const Rc<DxvkDevice> &device, HWND hwnd) {
-        if (m_hwnd == nullptr) {
-            Logger::err("Please set the hwnd first!");
+        if (hwnd == nullptr) {
+            Logger::err("[imgui] Please set the hwnd first!");
             return;
         }
         m_hwnd = hwnd;
 
-        ImGui_ImplVulkan_LoadFunctions(
-            DxvkVulkanApiVersion,
-            [](const char *function_name, void *) -> PFN_vkVoidFunction {
+        {
+            Logger::info("[imgui] Start loading ImGui library");
+            auto loader = [](const char *function_name, void *user_data) -> PFN_vkVoidFunction {
+                VkInstance instance = static_cast<VkInstance>(user_data);
                 static vk::LibraryLoader loader;
-                return loader.sym(function_name);
-            },
-            nullptr
-        );
+                return loader.sym(instance, function_name);
+            };
+            if (!ImGui_ImplVulkan_LoadFunctions(DxvkVulkanApiVersion, loader, device->instance()->handle())) {
+                Logger::err("[imgui] Failed to load required functions!");
+                return;
+            }
+            Logger::info("[imgui] Load ImGui library success");
+        }
 
         // Create imgui context
         {
@@ -83,6 +89,7 @@ namespace dxvk {
             initInfo.Queue = queues.graphics.queueHandle;
             initInfo.DescriptorPool = m_descriptorPool;
             initInfo.ImageCount = 2;
+            initInfo.MinImageCount = 2;
             initInfo.UseDynamicRendering = true;
             initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = {
                 VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR
@@ -92,7 +99,7 @@ namespace dxvk {
         }
 
         m_initialized = true;
-        Logger::info("Initialized ImGui");
+        Logger::info("[imgui] Initialized ImGui");
     }
 
     void DxvkImgui::onSwapChainCreate(VkFormat format, VkColorSpaceKHR colorSpace, uint32_t imageCount) {
@@ -112,6 +119,6 @@ namespace dxvk {
     }
 
     void DxvkImgui::destroy() {
-        Logger::info("Destroyed ImGui");
+        Logger::info("[imgui] Destroyed ImGui");
     }
 }
