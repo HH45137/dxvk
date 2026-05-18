@@ -415,6 +415,9 @@ namespace dxvk {
         BehaviorFlags,
         dxvkDevice);
 
+      // Setup imgui for d3d9
+      dxvkDevice->setImgui(dxvkDevice, hFocusWindow);
+
       if (!pPresentationParameters->Windowed)
         ActivateFocusWindow(hFocusWindow ? hFocusWindow : pPresentationParameters->hDeviceWindow);
 
