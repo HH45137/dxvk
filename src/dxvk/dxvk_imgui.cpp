@@ -2,18 +2,25 @@
 #include "../util/log/log.h"
 
 namespace dxvk {
-    ImGuiIO *DxvkImgui::io = nullptr;
+    ImGuiIO *DxvkImgui::m_io = nullptr;
 
-    void DxvkImgui::init() {
-        // Setup Dear ImGui context
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        io = &ImGui::GetIO();
-        (void *) io;
-        io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-        io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
+    void DxvkImgui::init(const Rc<DxvkDevice> &device, HWND hwnd, uint32_t width) {
+    }
 
-        Logger::info("Initialized ImGui");
+    void DxvkImgui::onSwapChainCreate(VkFormat format, VkColorSpaceKHR colorSpace, uint32_t imageCount) {
+    }
+
+    void DxvkImgui::onSwapChainDestroy() {
+    }
+
+    void DxvkImgui::newFrame() {
+    }
+
+    void DxvkImgui::render(const Rc<DxvkCommandList> &ctx, const Rc<DxvkImageView> &dstView) {
+    }
+
+    bool DxvkImgui::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+        return true;
     }
 
     void DxvkImgui::destroy() {
