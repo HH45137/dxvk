@@ -4,6 +4,7 @@
 #include "dxvk_presenter.h"
 
 #include "../wsi/wsi_window.h"
+#include "dxvk_imgui.h"
 
 namespace dxvk {
 
@@ -757,6 +758,8 @@ namespace dxvk {
 
     if (m_device->features().nvLowLatency2)
       latencyInfo.pNext = std::exchange(swapInfo.pNext, &latencyInfo);
+
+    DxvkImgui::onSwapChainCreate(swapInfo.imageFormat, swapInfo.imageColorSpace, swapInfo.minImageCount);
 
     Logger::info(str::format(
       "Presenter: Actual swapchain properties:"

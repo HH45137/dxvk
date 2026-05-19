@@ -7,6 +7,7 @@
 #include <dxvk_present_frag_ms.h>
 #include <dxvk_present_frag_ms_blit.h>
 #include <dxvk_present_vert.h>
+#include <dxvk_imgui.h>
 
 namespace dxvk {
   
@@ -108,10 +109,18 @@ namespace dxvk {
     renderInfo.colorAttachmentCount = 1;
     renderInfo.pColorAttachments = &attachmentInfo;
 
+    if (DxvkImgui::m_initialized) {
+      DxvkImgui::newFrame();
+    }
+
     ctx->cmdBeginRendering(DxvkCmdBuffer::ExecBuffer, &renderInfo);
 
     performDraw(ctx, dstView, dstRect,
       srcView, srcRect, composite);
+
+    if (DxvkImgui::m_initialized) {
+      DxvkImgui::render(ctx, dstView);
+    }
 
     if (!composite) {
       if (m_hud)

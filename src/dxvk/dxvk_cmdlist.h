@@ -1254,6 +1254,11 @@ namespace dxvk {
       m_descriptorHeapInvalidated = true;
     }
 
+    force_inline VkCommandBuffer getCmdBuffer() const {
+      // Allocation logic will always provide an execution buffer
+      return m_cmd.cmdBuffers[uint32_t(DxvkCmdBuffer::ExecBuffer)];
+    }
+
   private:
     
     DxvkDevice*               m_device;
@@ -1293,11 +1298,6 @@ namespace dxvk {
     std::vector<DxvkGraphicsPipeline*> m_pipelines;
 
     bool m_descriptorHeapInvalidated = false;
-
-    force_inline VkCommandBuffer getCmdBuffer() const {
-      // Allocation logic will always provide an execution buffer
-      return m_cmd.cmdBuffers[uint32_t(DxvkCmdBuffer::ExecBuffer)];
-    }
 
     force_inline VkCommandBuffer getCmdBuffer(DxvkCmdBuffer cmdBuffer) {
       VkCommandBuffer buffer = m_cmd.cmdBuffers[uint32_t(cmdBuffer)];
