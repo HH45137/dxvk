@@ -7,10 +7,14 @@
 #include "imgui_impl_vulkan.h"
 
 namespace dxvk {
+    static void ImguiLoging(const std::string &str) {
+        Logger::log(LogLevel::Debug, "[imgui] " + str);
+    }
+
     static void checkVkResult(VkResult err) {
         if (err == VK_SUCCESS)
             return;
-        Logger::info("[imgui] [vulkan] Error: VkResult =" + std::to_string(err));
+        ImguiLoging("Error: VkResult =" + std::to_string(err));
     }
 
     bool DxvkImgui::m_initialized = false;
@@ -25,24 +29,24 @@ namespace dxvk {
 
     void DxvkImgui::init(const Rc<DxvkDevice> &device, HWND hwnd) {
         if (hwnd == nullptr) {
-            Logger::err("[imgui] Please set the hwnd first!");
+            ImguiLoging("Please set the hwnd first!");
             return;
         }
         m_hwnd = hwnd;
         m_device = device;
 
         {
-            Logger::info("[imgui] Start loading ImGui library");
+            ImguiLoging("Start loading ImGui library");
             auto loader = [](const char *function_name, void *user_data) -> PFN_vkVoidFunction {
                 VkInstance instance = static_cast<VkInstance>(user_data);
                 static vk::LibraryLoader loader;
                 return loader.sym(instance, function_name);
             };
             if (!ImGui_ImplVulkan_LoadFunctions(DxvkVulkanApiVersion, loader, device->instance()->handle())) {
-                Logger::err("[imgui] Failed to load required functions!");
+                ImguiLoging("Failed to load required functions!");
                 return;
             }
-            Logger::info("[imgui] Load ImGui library success");
+            ImguiLoging("Load ImGui library success");
         }
 
         // Create imgui context
@@ -84,7 +88,7 @@ namespace dxvk {
         // Vulkan backend will be initialized in onSwapChainCreate
         // when we have the actual swapchain format information
 
-        Logger::info("[imgui] Initialized ImGui (Vulkan backend deferred until swapchain creation)");
+        ImguiLoging("Initialized ImGui (Vulkan backend deferred until swapchain creation)");
     }
 
     void DxvkImgui::initVulkanBackend() {
@@ -97,8 +101,8 @@ namespace dxvk {
 
         auto queues = m_device->queues();
 
-        Logger::info("[imgui] Initializing Vulkan backend with ImageCount=" + std::to_string(m_imageCount)
-                     + ", colorFormat=" + std::to_string(m_colorFormats[0]));
+        ImguiLoging("Initializing Vulkan backend with ImageCount=" + std::to_string(m_imageCount)
+                    + ", colorFormat=" + std::to_string(m_colorFormats[0]));
 
         ImGui_ImplVulkan_InitInfo initInfo{};
         initInfo.Instance = m_device->instance()->handle();
@@ -113,17 +117,17 @@ namespace dxvk {
         initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = pipelineCI;
         initInfo.CheckVkResultFn = checkVkResult;
         bool initOk = ImGui_ImplVulkan_Init(&initInfo);
-        Logger::info("[imgui] ImGui_ImplVulkan_Init returned: " + std::to_string(initOk));
+        ImguiLoging("ImGui_ImplVulkan_Init returned: " + std::to_string(initOk));
 
         m_initialized = true;
-        Logger::info("[imgui] Vulkan backend initialized successfully");
+        ImguiLoging("Vulkan backend initialized successfully");
     }
 
     void DxvkImgui::destroyVulkanBackend() {
         if (m_initialized) {
             ImGui_ImplVulkan_Shutdown();
             m_initialized = false;
-            Logger::info("[imgui] Vulkan backend destroyed");
+            ImguiLoging("Vulkan backend destroyed");
         }
     }
 
@@ -136,8 +140,10 @@ namespace dxvk {
         m_colorAttachmentCount = 1;
         m_imageCount = imageCount;
 
-        Logger::info("[imgui] SwapChain created: format=" + std::to_string(format)
-                     + ", imageCount=" + std::to_string(imageCount));
+        ImguiLoging(
+            "SwapChain created: format=" + std::to_string(format) +
+            ", imageCount=" + std::to_string(imageCount)
+        );
 
         // Now initialize the Vulkan backend with the correct format
         initVulkanBackend();
@@ -148,7 +154,7 @@ namespace dxvk {
     }
 
     void DxvkImgui::newFrame() {
-        Logger::info("[imgui] Begin ImGui newFrame");
+        ImguiLoging("Begin ImGui newFrame");
 
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplWin32_NewFrame();
@@ -164,30 +170,17 @@ namespace dxvk {
 
         ImGui::Render();
 
-        Logger::info("[imgui] End ImGui newFrame");
+        ImguiLoging("End ImGui newFrame");
     }
 
     void DxvkImgui::render(const Rc<DxvkCommandList> &ctx, const Rc<DxvkImageView> &dstView) {
-        Logger::info("[imgui] Begin ImGui Rendering");
-
         ImDrawData *drawData = ImGui::GetDrawData();
         if (!drawData || drawData->DisplaySize.x <= 0 || drawData->DisplaySize.y <= 0) {
-            Logger::info("[imgui] Render skipped: no draw data");
+            Logger::log(LogLevel::Debug, "Render skipped: no draw data");
             return;
         }
 
-        Logger::info("[imgui] DrawData: TotalVtxCount=" + std::to_string(drawData->TotalVtxCount)
-                     + ", TotalIdxCount=" + std::to_string(drawData->TotalIdxCount)
-                     + ", CmdListsCount=" + std::to_string(drawData->CmdListsCount)
-                     + ", DisplaySize=" + std::to_string(drawData->DisplaySize.x) + "x" + std::to_string(
-                         drawData->DisplaySize.y));
-
-        VkCommandBuffer cmd = ctx->getCmdBuffer();
-        Logger::info("[imgui] Calling ImGui_ImplVulkan_RenderDrawData...");
-        ImGui_ImplVulkan_RenderDrawData(drawData, cmd);
-        Logger::info("[imgui] Back from ImGui_ImplVulkan_RenderDrawData");
-
-        Logger::info("[imgui] End ImGui Rendering");
+        ImGui_ImplVulkan_RenderDrawData(drawData, ctx->getCmdBuffer());
     }
 
     bool DxvkImgui::wndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -209,6 +202,6 @@ namespace dxvk {
 
         m_device = nullptr;
         m_hwnd = nullptr;
-        Logger::info("[imgui] Destroyed ImGui");
+        ImguiLoging("Destroyed ImGui");
     }
 }
