@@ -4,7 +4,7 @@
 #include "dxvk_presenter.h"
 
 #include "../wsi/wsi_window.h"
-#include "dxvk_imgui.h"
+#include "../dxvk/dxvk_imgui.h"
 
 namespace dxvk {
 
@@ -759,8 +759,6 @@ namespace dxvk {
     if (m_device->features().nvLowLatency2)
       latencyInfo.pNext = std::exchange(swapInfo.pNext, &latencyInfo);
 
-    DxvkImgui::onSwapChainCreate(swapInfo.imageFormat, swapInfo.imageColorSpace, swapInfo.minImageCount);
-
     Logger::info(str::format(
       "Presenter: Actual swapchain properties:"
       "\n  Format:       ", swapInfo.imageFormat,
@@ -862,6 +860,8 @@ namespace dxvk {
 
     if (m_signal && m_hasPresentWait && !m_frameThread.joinable())
       m_frameThread = dxvk::thread([this] { runFrameThread(); });
+
+    DxvkImgui::onSwapChainCreate(formatPair.second, swapInfo.imageColorSpace, swapInfo.minImageCount);
 
     return VK_SUCCESS;
   }

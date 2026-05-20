@@ -7,8 +7,74 @@
 #include "imgui_impl_vulkan.h"
 
 namespace dxvk {
+    namespace temp {
+        // Reusable buffers used for rendering 1 current in-flight frame, for ImGui_ImplVulkan_RenderDrawData()
+        // [Please zero-clear before use!]
+        struct ImGui_ImplVulkan_FrameRenderBuffers {
+            VkDeviceMemory VertexBufferMemory;
+            VkDeviceMemory IndexBufferMemory;
+            VkDeviceSize VertexBufferSize;
+            VkDeviceSize IndexBufferSize;
+            VkBuffer VertexBuffer;
+            VkBuffer IndexBuffer;
+        };
+
+        // Each viewport will hold 1 ImGui_ImplVulkanH_WindowRenderBuffers
+        // [Please zero-clear before use!]
+        struct ImGui_ImplVulkan_WindowRenderBuffers {
+            uint32_t Index;
+            uint32_t Count;
+            ImVector<ImGui_ImplVulkan_FrameRenderBuffers> FrameRenderBuffers;
+        };
+
+        struct ImGui_ImplVulkan_Texture {
+            VkDeviceMemory Memory;
+            VkImage Image;
+            VkImageView ImageView;
+            VkDescriptorSet DescriptorSet;
+
+            ImGui_ImplVulkan_Texture() { memset((void *) this, 0, sizeof(*this)); }
+        };
+
+        // Vulkan data
+        struct ImGui_ImplVulkan_Data {
+            ImGui_ImplVulkan_InitInfo VulkanInitInfo;
+            ImGui_ImplVulkan_RenderState *RenderState;
+            // == ImGui::GetPlatformIO().Renderer_RenderState during rendering.
+            VkDeviceSize BufferMemoryAlignment;
+            VkDeviceSize NonCoherentAtomSize;
+            VkPipelineCreateFlags PipelineCreateFlags;
+            VkDescriptorSetLayout DescriptorSetLayoutTexture;
+            VkDescriptorSetLayout DescriptorSetLayoutSampler;
+            VkPipelineLayout PipelineLayout;
+            VkPipeline Pipeline; // pipeline for main render pass (created by app)
+            VkShaderModule ShaderModuleVert;
+            VkShaderModule ShaderModuleFrag;
+            VkDescriptorPool DescriptorPool;
+            ImVector<VkFormat> PipelineRenderingCreateInfoColorAttachmentFormats; // Deep copy of format array
+
+            // Texture management
+            VkSampler SamplerLinear;
+            VkSampler SamplerNearest;
+            VkDescriptorSet SamplerLinearDS;
+            VkDescriptorSet SamplerNearestDS;
+            VkCommandPool TexCommandPool;
+            VkCommandBuffer TexCommandBuffer;
+
+            // Render buffers for main window
+            ImGui_ImplVulkan_WindowRenderBuffers MainWindowRenderBuffers;
+
+            ImGui_ImplVulkan_Data() {
+                memset((void *) this, 0, sizeof(*this));
+                BufferMemoryAlignment = 256;
+                NonCoherentAtomSize = 64;
+            }
+        };
+    }
+
     static void ImguiLoging(const std::string &str) {
         Logger::log(LogLevel::Debug, "[imgui] " + str);
+        // Logger::log(LogLevel::Warn, "[imgui] " + str);
     }
 
     static void checkVkResult(VkResult err) {
@@ -28,6 +94,36 @@ namespace dxvk {
     HWND DxvkImgui::m_hwnd = nullptr;
 
     void DxvkImgui::init(const Rc<DxvkDevice> &device) {
+        if (m_device != nullptr) {
+            destroyVulkanBackend();
+
+            if (ImGui::GetCurrentContext() != nullptr &&
+                ImGui::GetIO().BackendPlatformUserData != nullptr
+            ) {
+                ImGui_ImplWin32_Shutdown();
+            }
+
+            if (ImGui::GetCurrentContext() != nullptr) {
+                ImGui::DestroyContext();
+            }
+
+            if (m_descriptorPool != VK_NULL_HANDLE && m_device) {
+                m_device->vkd()->vkDestroyDescriptorPool(
+                    m_device->vkd()->device(),
+                    m_descriptorPool,
+                    nullptr
+                );
+                m_descriptorPool = VK_NULL_HANDLE;
+            }
+
+            m_device = nullptr;
+            m_hwnd = nullptr;
+            m_initialized = false;
+            m_imageCount = 0;
+            m_colorAttachmentCount = 0;
+            m_io = nullptr;
+            ImguiLoging("Destroyed old ImGui state before re-init");
+        }
         m_device = device;
 
         {
@@ -76,9 +172,6 @@ namespace dxvk {
             );
             checkVkResult(result);
         }
-
-        // Vulkan backend will be initialized in onSwapChainCreate
-        // when we have the actual swapchain format information
 
         ImguiLoging("[Vulkan] Initialized ImGui");
     }
@@ -129,6 +222,19 @@ namespace dxvk {
 
     void DxvkImgui::destroyVulkanBackend() {
         if (m_initialized) {
+            auto bd = static_cast<temp::ImGui_ImplVulkan_Data *>(ImGui::GetIO().BackendRendererUserData);
+            if (bd) {
+                if (bd->SamplerLinearDS) {
+                    m_device->vkd()->vkFreeDescriptorSets(m_device->vkd()->device(), m_descriptorPool, 1,
+                                                          &bd->SamplerLinearDS);
+                    bd->SamplerLinearDS = VK_NULL_HANDLE;
+                }
+                if (bd->SamplerNearestDS) {
+                    m_device->vkd()->vkFreeDescriptorSets(m_device->vkd()->device(), m_descriptorPool, 1,
+                                                          &bd->SamplerNearestDS);
+                    bd->SamplerNearestDS = VK_NULL_HANDLE;
+                }
+            }
             ImGui_ImplVulkan_Shutdown();
             m_initialized = false;
             ImguiLoging("Vulkan backend destroyed");
@@ -172,12 +278,16 @@ namespace dxvk {
 
         ImGui::End();
 
-        ImGui::Render();
-
         ImguiLoging("End ImGui newFrame");
     }
 
     void DxvkImgui::render(const Rc<DxvkCommandList> &ctx, const Rc<DxvkImageView> &dstView) {
+        if (!m_initialized) {
+            return;
+        }
+
+        ImGui::Render();
+
         ImDrawData *drawData = ImGui::GetDrawData();
         if (!drawData || drawData->DisplaySize.x <= 0 || drawData->DisplaySize.y <= 0) {
             Logger::log(LogLevel::Debug, "Render skipped: no draw data");
@@ -192,6 +302,36 @@ namespace dxvk {
     }
 
     void DxvkImgui::destroy() {
+        if (m_device == nullptr) {
+            ImguiLoging("Destroy skipped: already cleaned up");
+            return;
+        }
+        destroyVulkanBackend();
+
+        if (ImGui::GetCurrentContext() != nullptr &&
+            ImGui::GetIO().BackendPlatformUserData != nullptr
+        ) {
+            ImGui_ImplWin32_Shutdown();
+        }
+        if (ImGui::GetCurrentContext() != nullptr) {
+            ImGui::DestroyContext();
+        }
+
+        if (m_descriptorPool != VK_NULL_HANDLE && m_device) {
+            m_device->vkd()->vkDestroyDescriptorPool(
+                m_device->vkd()->device(),
+                m_descriptorPool,
+                nullptr
+            );
+            m_descriptorPool = VK_NULL_HANDLE;
+        }
+
+        m_device = nullptr;
+        m_hwnd = nullptr;
+        m_initialized = false;
+        m_imageCount = 0;
+        m_colorAttachmentCount = 0;
+
         ImguiLoging("Destroyed ImGui");
     }
 }
