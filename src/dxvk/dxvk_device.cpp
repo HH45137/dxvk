@@ -67,7 +67,7 @@ namespace dxvk {
     // access to structures that are being destroyed.
     m_objects.pipelineManager().stopWorkerThreads();
 
-    destroyImgui();
+    DxvkImgui::destroy();
   }
 
 
@@ -706,14 +706,6 @@ namespace dxvk {
       Logger::err("DxvkDevice: waitForIdle: Operation failed");
 
     m_submissionQueue.unlockDeviceQueue();
-  }
-
-  void DxvkDevice::setImgui(const Rc<DxvkDevice> &device, HWND hwnd) {
-    DxvkImgui::init(device, hwnd);
-  }
-
-  void DxvkDevice::destroyImgui() {
-    DxvkImgui::destroy();
   }
 
   DxvkDevicePerfHints DxvkDevice::getPerfHints() {

@@ -8,7 +8,9 @@
 namespace dxvk {
     class DxvkImgui {
     public:
-        static void init(const Rc<DxvkDevice> &device, HWND hwnd);
+        static void init(const Rc<DxvkDevice> &device);
+
+        static void initWin32(HWND hwnd);
 
         static void onSwapChainCreate(
             VkFormat format,

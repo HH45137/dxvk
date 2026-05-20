@@ -27,12 +27,7 @@ namespace dxvk {
     VkDescriptorPool DxvkImgui::m_descriptorPool = VK_NULL_HANDLE;
     HWND DxvkImgui::m_hwnd = nullptr;
 
-    void DxvkImgui::init(const Rc<DxvkDevice> &device, HWND hwnd) {
-        if (hwnd == nullptr) {
-            ImguiLoging("Please set the hwnd first!");
-            return;
-        }
-        m_hwnd = hwnd;
+    void DxvkImgui::init(const Rc<DxvkDevice> &device) {
         m_device = device;
 
         {
@@ -82,13 +77,22 @@ namespace dxvk {
             checkVkResult(result);
         }
 
-        // The win32 backend
-        ImGui_ImplWin32_Init(m_hwnd);
-
         // Vulkan backend will be initialized in onSwapChainCreate
         // when we have the actual swapchain format information
 
-        ImguiLoging("Initialized ImGui (Vulkan backend deferred until swapchain creation)");
+        ImguiLoging("[Vulkan] Initialized ImGui");
+    }
+
+    void DxvkImgui::initWin32(HWND hwnd) {
+        if (hwnd == nullptr) {
+            ImguiLoging("[Win32] Please set the hwnd first!");
+            return;
+        }
+        m_hwnd = hwnd;
+
+        // The win32 backend
+        ImGui_ImplWin32_Init(m_hwnd);
+        ImguiLoging("[Win32] Initialized ImGui");
     }
 
     void DxvkImgui::initVulkanBackend() {
@@ -188,20 +192,6 @@ namespace dxvk {
     }
 
     void DxvkImgui::destroy() {
-        destroyVulkanBackend();
-
-        ImGui_ImplWin32_Shutdown();
-        ImGui::DestroyContext();
-
-        if (m_descriptorPool != VK_NULL_HANDLE && m_device) {
-            m_device->vkd()->vkDestroyDescriptorPool(
-                m_device->vkd()->device(),
-                m_descriptorPool, nullptr);
-            m_descriptorPool = VK_NULL_HANDLE;
-        }
-
-        m_device = nullptr;
-        m_hwnd = nullptr;
         ImguiLoging("Destroyed ImGui");
     }
 }

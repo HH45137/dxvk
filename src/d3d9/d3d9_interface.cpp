@@ -7,6 +7,7 @@
 #include "d3d9_window.h"
 
 #include "../util/util_singleton.h"
+#include "../dxvk/dxvk_imgui.h"
 
 #include <algorithm>
 
@@ -416,7 +417,8 @@ namespace dxvk {
         dxvkDevice);
 
       // Setup imgui for d3d9
-      dxvkDevice->setImgui(dxvkDevice, hFocusWindow);
+      DxvkImgui::init(dxvkDevice);
+      DxvkImgui::initWin32(hFocusWindow);
 
       if (!pPresentationParameters->Windowed)
         ActivateFocusWindow(hFocusWindow ? hFocusWindow : pPresentationParameters->hDeviceWindow);

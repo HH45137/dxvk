@@ -734,10 +734,6 @@ namespace dxvk {
      */
     void waitForIdle();
 
-    void setImgui(const Rc<DxvkDevice> &device, HWND hwnd);
-
-    void destroyImgui();
-
   private:
     
     DxvkOptions                 m_options;

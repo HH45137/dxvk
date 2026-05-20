@@ -32,6 +32,7 @@
 #include "../wsi/wsi_window.h"
 
 #include "../util/util_shared_res.h"
+#include "../dxvk/dxvk_imgui.h"
 
 namespace dxvk {
   
@@ -56,6 +57,8 @@ namespace dxvk {
     m_initializer = new D3D11Initializer(this);
     m_context     = new D3D11ImmediateContext(this, m_dxvkDevice);
     m_d3d10Device = new D3D10Device(this, m_context.ptr());
+    // Setup imgui for d3d11
+    DxvkImgui::init(m_dxvkDevice);
   }
   
   
@@ -3710,6 +3713,9 @@ namespace dxvk {
     InitReturnPtr(ppSwapChain);
 
     try {
+      // Setup imgui for d3d11
+      DxvkImgui::initWin32(pSurfaceFactory->GetWindowHandle());
+
       auto vki = m_device->GetDXVKDevice()->adapter()->vki();
 
       Com<D3D11SwapChain> presenter = new D3D11SwapChain(
