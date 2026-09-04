@@ -4,6 +4,7 @@ pkg = import('pkgconfig')
 cpu_family = target_machine.cpu_family()
 platform   = target_machine.system()
 fs = import('fs')
+cmake = import('cmake')
 
 cpp = meson.get_compiler('cpp')
 cc = meson.get_compiler('c')
@@ -176,6 +177,11 @@ endif
 
 dxbc_spirv = subproject('dxbc-spirv')
 dxbc_spirv_dep = dxbc_spirv.get_variable('dxbc_spv_dep')
+
+spirv_cross_cmake_var = cmake.subproject_options()
+spirv_cross_cmake_var.add_cmake_defines({'SPIRV_CROSS_ENABLE_HLSL': true})
+spirv_cross = cmake.subproject('spirv-cross', options: spirv_cross_cmake_var)
+spirv_cross_dep = spirv_cross.dependency('spirv-cross-hlsl')
 
 dxvk_include_path = include_directories(dxvk_include_dirs)
 
