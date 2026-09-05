@@ -179,6 +179,15 @@ namespace dxvk {
      */
     std::string debugName();
 
+    /**
+     * \brief Export shader to HLSL source code
+     *
+     * \param [in] prefixStr Current DX version and shader type
+     * \param [in] shaderHash Unique shader identifier
+     * \returns true if export succeeded
+     */
+    bool exportToHlsl(const std::string& prefixStr, const size_t& shaderHash);
+
   private:
 
     Rc<DxvkIrShaderConverter>     m_baseIr;

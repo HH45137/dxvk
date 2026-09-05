@@ -1,8 +1,13 @@
+#include <filesystem>
+
 #include <ir/ir_serialize.h>
 
 #include <spirv/spirv_builder.h>
 
 #include <util/util_log.h>
+
+#include <spirv_hlsl.hpp>
+#include <spirv_glsl.hpp>
 
 #include "dxvk_shader_ir.h"
 
@@ -2163,6 +2168,70 @@ namespace dxvk {
     return m_debugName;
   }
 
+  bool DxvkIrShader::exportToHlsl(const std::string& prefixStr, const size_t& shaderHash)
+  {
+      try
+      {
+          auto spirvCode = this->getCode(nullptr, nullptr);
+
+          if (spirvCode.size() == 0)
+          {
+              Logger::err(str::format("DxvkIrShader::exportToHlsl: Empty SPIRV code for ", m_debugName));
+              return false;
+          }
+          Logger::err(str::format("DxvkIrShader::exportToHlsl: spirvCode.size() == ", spirvCode.size()));
+
+          // Decompile
+          std::string hlslSource;
+          {
+              uint32_t* spirvBinaryDataPtr = spirvCode.data();
+              std::vector<uint32_t> spirvBinaryData(spirvBinaryDataPtr, spirvBinaryDataPtr + spirvCode.dwords());
+
+              spirv_cross::CompilerGLSL glsl(spirvBinaryData);
+
+              spirv_cross::CompilerGLSL::Options options;
+              options.version = 450;
+              options.vulkan_semantics = true;
+              glsl.set_common_options(options);
+
+              hlslSource = glsl.compile();
+          }
+
+          const auto& exportPath = env::getEnvVar("DXVK_SHADER_SRC_DUMP_PATH");
+          std::string filePath = str::format(
+              exportPath,
+              "/",
+              env::getExeBaseName(),
+              "/",
+              prefixStr,
+              "/",
+              shaderHash,
+              ".hlsl"
+          );
+
+          std::filesystem::path dir = std::filesystem::path(filePath).parent_path();
+          std::filesystem::create_directories(dir);
+
+          std::ofstream file(filePath, std::ios::trunc | std::ios::binary);
+          if (!file.is_open())
+          {
+              Logger::err(str::format("DxvkIrShader::exportToHlsl: Failed to open file ", filePath));
+              return false;
+          }
+
+          file << hlslSource;
+          file.close();
+
+          Logger::info(str::format("DxvkIrShader::exportToHlsl: Exported to ", filePath));
+
+          return true;
+      }
+      catch (const std::exception& e)
+      {
+          Logger::err(str::format("DxvkIrShader::exportToHlsl: Exception: ", e.what()));
+          return false;
+      }
+  }
 
   void DxvkIrShader::convertIr(const char* reason) {
     if (m_convertedIr.load())
