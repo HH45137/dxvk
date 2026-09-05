@@ -32,6 +32,20 @@
 
 namespace dxvk {
 
+    static void exportShader(D3D9CommonShader& module, const std::string& prefixStr)
+    {
+        if (auto dxvkShader = module.GetShader())
+        {
+            if (auto irShader = dynamic_cast<DxvkIrShader*>(dxvkShader.ptr()))
+            {
+                size_t shaderHash = dxvkShader->getCookie();
+                if (irShader->exportToHlsl(prefixStr, shaderHash))
+                {
+                }
+            }
+        }
+    }
+
   D3D9DeviceEx::D3D9DeviceEx(
           D3D9InterfaceEx*       pParent,
           D3D9Adapter*           pAdapter,
@@ -3544,6 +3558,8 @@ namespace dxvk {
       pFunction,
       uint32_t(bytecodeLength)));
 
+    exportShader(module, "DX9-VS");
+
     return D3D_OK;
   }
 
@@ -3901,6 +3917,8 @@ namespace dxvk {
       module,
       pFunction,
       uint32_t(bytecodeLength)));
+
+    exportShader(module, "DX9-PS");
 
     return D3D_OK;
   }
